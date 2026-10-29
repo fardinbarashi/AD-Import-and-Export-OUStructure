@@ -3,27 +3,36 @@
     Exports an OU and all of its sub-OUs to a UTF-8 CSV file.
 
 .DESCRIPTION
-    Finds the OU (default "Katrineholm") and exports the entire structure below it,
+    Finds the OU (by name or full DN) and exports the entire structure below it,
     including the root OU itself. Each OU is stored with a relative path (RelativeDN)
     so the structure can be recreated anywhere with Import-OUStructure.ps1.
 
     The CSV file is semicolon-delimited and UTF-8 encoded.
 
 .EXAMPLE
-    .\Export-OUStructure.ps1
-    Exports the OU "Katrineholm" to .\OU-Structure_Katrineholm.csv
+    .\Export-OUStructure.ps1 -OUName Contoso
+    Exports the OU "Contoso" to .\OU-Structure_Contoso.csv
 
 .EXAMPLE
-    .\Export-OUStructure.ps1 -SearchBase "OU=Katrineholm,OU=Municipalities,DC=contoso,DC=local" -Path C:\Temp\ou.csv
+    .\Export-OUStructure.ps1 -SearchBase "OU=Contoso,OU=Regions,DC=contoso,DC=local" -Path C:\Temp\ou.csv
     Use the full DN if more than one OU has the same name.
 #>
 #Requires -Modules ActiveDirectory
 [CmdletBinding()]
 param(
-    [string]$OUName = 'Katrineholm',
+    # Name of the root OU
+    [string]$OUName,
+
+    # Full DN of the root OU (use when several OUs have the same name)
     [string]$SearchBase,
-    [string]$Path = ".\OU-Structure_$OUName.csv"
+
+    # Output file (default: .\OU-Structure_<root OU name>.csv)
+    [string]$Path
 )
+
+if (-not $OUName -and -not $SearchBase) {
+    throw 'Specify the root OU with -OUName or -SearchBase.'
+}
 
 Import-Module ActiveDirectory -ErrorAction Stop
 
@@ -52,6 +61,12 @@ try {
 
 # Parent of the root OU, e.g. "DC=contoso,DC=local"
 $rootParent = ($SearchBase -split $dnSplit, 2)[1]
+
+# Default file name from the root OU's name
+if (-not $Path) {
+    $rootName = (($SearchBase -split $dnSplit, 2)[0] -replace '^OU=', '') -replace '\\(.)', '$1'
+    $Path = ".\OU-Structure_$($rootName -replace '[\\/:*?"<>|]', '_').csv"
+}
 
 # UTF-8 with BOM in both Windows PowerShell 5.1 and PowerShell 7 (so Excel shows å/ä/ö correctly)
 $csvEncoding = if ($PSVersionTable.PSVersion.Major -ge 6) { 'utf8BOM' } else { 'UTF8' }

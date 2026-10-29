@@ -1,6 +1,6 @@
 # AD OU Structure Export / Import
 
-PowerShell scripts that copy an Active Directory OU structure, such as the OU `Katrineholm` and all its sub-OUs, from one domain to another. Typically used to build a test environment that mirrors production.
+PowerShell scripts that copy an Active Directory OU structure, such as one top-level OU and all its sub-OUs, from one domain to another. Typically used to build a test environment that mirrors production.
 
 | Script | Run in | What it does |
 |---|---|---|
@@ -25,11 +25,11 @@ The CSV file is semicolon-delimited and **UTF-8** encoded (with BOM, so Excel sh
 
 ```powershell
 # In the SOURCE domain
-.\Export-OUStructure.ps1 -OUName Katrineholm -Path C:\temp\OU-Structure_Katrineholm.csv
+.\Export-OUStructure.ps1 -OUName Contoso -Path C:\temp\OU-Structure_Contoso.csv
 
 # Copy the CSV file to the TARGET domain, then:
-.\Import-OUStructure.ps1 -Path C:\temp\OU-Structure_Katrineholm.csv -WhatIf    # preview
-.\Import-OUStructure.ps1 -Path C:\temp\OU-Structure_Katrineholm.csv            # create
+.\Import-OUStructure.ps1 -Path C:\temp\OU-Structure_Contoso.csv -WhatIf    # preview
+.\Import-OUStructure.ps1 -Path C:\temp\OU-Structure_Contoso.csv            # create
 ```
 
 > **Tip:** PowerShell does not run scripts from the current folder without a path. Always start with `.\`, e.g. `.\Import-OUStructure.ps1`.
@@ -41,16 +41,16 @@ The CSV file is semicolon-delimited and **UTF-8** encoded (with BOM, so Excel sh
 Finds the OU and exports it together with every sub-OU. Each OU is saved with a path *relative* to the root OU's parent, so the structure can be recreated anywhere, for example under the domain root of another domain or under a different parent OU.
 
 ```powershell
-.\Export-OUStructure.ps1                                   # OU "Katrineholm" -> .\OU-Structure_Katrineholm.csv
-.\Export-OUStructure.ps1 -OUName Flen -Path C:\temp\flen.csv
-.\Export-OUStructure.ps1 -SearchBase "OU=Katrineholm,OU=Municipalities,DC=contoso,DC=local"
+.\Export-OUStructure.ps1 -OUName Contoso                   # OU "Contoso" -> .\OU-Structure_Contoso.csv
+.\Export-OUStructure.ps1 -OUName Fabrikam -Path C:\temp\fabrikam.csv
+.\Export-OUStructure.ps1 -SearchBase "OU=Contoso,OU=Regions,DC=contoso,DC=local"
 ```
 
 | Parameter | Description |
 |---|---|
-| `-OUName` | Name of the root OU (default `Katrineholm`) |
+| `-OUName` | Name of the root OU. Either `-OUName` or `-SearchBase` is required. |
 | `-SearchBase` | Full DN of the root OU. Use it if more than one OU has the same name. |
-| `-Path` | Output CSV file (default `.\OU-Structure_<OUName>.csv`) |
+| `-Path` | Output CSV file (default `.\OU-Structure_<root OU name>.csv`) |
 
 If more than one OU has the given name, the script stops and lists them so you can choose with `-SearchBase`.
 
@@ -59,11 +59,11 @@ If more than one OU has the given name, the script stops and lists them so you c
 | Column | Example |
 |---|---|
 | `Name` | `Users` |
-| `RelativeDN` | `OU=Users,OU=KLF,OU=Katrineholm` |
+| `RelativeDN` | `OU=Users,OU=Sales,OU=Contoso` |
 | `Depth` | `3` |
-| `Description` | `KLF users` |
+| `Description` | `Sales users` |
 | `Protected` | `True` |
-| `SourceDN` | `OU=Users,OU=KLF,OU=Katrineholm,DC=adm,DC=contoso,DC=local` (for reference only) |
+| `SourceDN` | `OU=Users,OU=Sales,OU=Contoso,DC=contoso,DC=local` (for reference only) |
 
 ---
 
@@ -72,9 +72,9 @@ If more than one OU has the given name, the script stops and lists them so you c
 Creates the OUs in the right order, parent before child. OUs that already exist are skipped, so the script can safely be run again. The description and *Protect object from accidental deletion* setting are copied.
 
 ```powershell
-.\Import-OUStructure.ps1 -Path .\OU-Structure_Katrineholm.csv -WhatIf
-.\Import-OUStructure.ps1 -Path .\OU-Structure_Katrineholm.csv
-.\Import-OUStructure.ps1 -Path .\OU-Structure_Katrineholm.csv -TargetParentDN "OU=Municipalities,DC=test,DC=local"
+.\Import-OUStructure.ps1 -Path .\OU-Structure_Contoso.csv -WhatIf
+.\Import-OUStructure.ps1 -Path .\OU-Structure_Contoso.csv
+.\Import-OUStructure.ps1 -Path .\OU-Structure_Contoso.csv -TargetParentDN "OU=Regions,DC=test,DC=local"
 ```
 
 | Parameter | Description |
@@ -87,9 +87,9 @@ Example output:
 
 ```
 Creating 208 OUs under: DC=test,DC=contoso,DC=local
-  Already exists: OU=Katrineholm,DC=test,DC=contoso,DC=local
-  Created:        OU=KLF,OU=Katrineholm,DC=test,DC=contoso,DC=local
-  Created:        OU=Users,OU=KLF,OU=Katrineholm,DC=test,DC=contoso,DC=local
+  Already exists: OU=Contoso,DC=test,DC=contoso,DC=local
+  Created:        OU=Sales,OU=Contoso,DC=test,DC=contoso,DC=local
+  Created:        OU=Users,OU=Sales,OU=Contoso,DC=test,DC=contoso,DC=local
   ...
 Done. Created: 206  Already existed: 2  Errors: 0
 ```

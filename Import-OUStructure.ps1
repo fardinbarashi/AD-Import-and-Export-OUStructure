@@ -12,10 +12,10 @@
     Run with -WhatIf first to see what would be created.
 
 .EXAMPLE
-    .\Import-OUStructure.ps1 -Path .\OU-Structure_Katrineholm.csv -WhatIf
+    .\Import-OUStructure.ps1 -Path .\OU-Structure_Contoso.csv -WhatIf
 
 .EXAMPLE
-    .\Import-OUStructure.ps1 -Path .\OU-Structure_Katrineholm.csv -TargetParentDN "OU=Municipalities,DC=test,DC=local"
+    .\Import-OUStructure.ps1 -Path .\OU-Structure_Contoso.csv -TargetParentDN "OU=Regions,DC=test,DC=local"
 #>
 #Requires -Modules ActiveDirectory
 [CmdletBinding(SupportsShouldProcess)]
